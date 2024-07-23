@@ -10,11 +10,15 @@ df = pd.read_csv(data_path)
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
-    doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
+    try:
+        doc = fitz.open(stream=pdf_file.read(), filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
+    except Exception as e:
+        st.error(f"Error reading PDF file: {e}")
+        return ""
 
 # Page 1: Upload Resume and Find Job Details
 def page1():
@@ -25,15 +29,31 @@ def page1():
         if uploaded_file.type == "application/pdf":
             resume_text = extract_text_from_pdf(uploaded_file)
         else:
-            resume_text = uploaded_file.read().decode("utf-8")
+            try:
+                resume_text = uploaded_file.read().decode("utf-8")
+            except Exception as e:
+                st.error(f"Error reading text file: {e}")
+                return
+        
+        # Check if the resume text was successfully extracted
+        if not resume_text:
+            st.error("No text could be extracted from the uploaded resume.")
+            return
         
         # Combine the resume text with the job descriptions for TF-IDF vectorization
         job_descriptions = df['Job Description'].tolist()
         corpus = [resume_text] + job_descriptions
         
+        # Debugging: print the corpus to the Streamlit app
+        st.write("Corpus contents:", corpus[:5])  # Display first 5 items for debugging
+        
         # Vectorize the text using TF-IDF
-        vectorizer = TfidfVectorizer(stop_words='english')
-        tfidf_matrix = vectorizer.fit_transform(corpus)
+        try:
+            vectorizer = TfidfVectorizer(stop_words='english')
+            tfidf_matrix = vectorizer.fit_transform(corpus)
+        except ValueError as e:
+            st.error(f"Error in fit_transform: {e}")
+            return
         
         # Compute cosine similarity between the resume and all job descriptions
         cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
