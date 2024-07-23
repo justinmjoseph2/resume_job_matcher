@@ -5,7 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the dataset
-data_path = "./job_descriptions.csv"
+data_path = "./Book2.csv"
 df = pd.read_csv(data_path)
 
 # Function to extract text from PDF
