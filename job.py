@@ -1,12 +1,14 @@
 import streamlit as st
 import pandas as pd
 import fitz
+import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load the dataset
-data_path = "./Book2.csv"
-df = pd.read_csv(data_path)
+# Load the preprocessed dataset
+data_path = "./preprocessed_data.pkl"
+with open(data_path, 'rb') as f:
+    df = pickle.load(f)
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
