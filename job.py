@@ -6,7 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the preprocessed dataset
-data_path = "./preprocessed_data.pkl"
+data_path = "preprocessed_data.pkl"
 with open(data_path, 'rb') as f:
     df = pickle.load(f)
 
