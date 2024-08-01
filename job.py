@@ -22,17 +22,20 @@ def extract_text_from_pdf(pdf_file):
 def page1():
     st.title("Resume Job Matcher")
     uploaded_file = st.file_uploader("Upload your resume", type=["pdf", "txt"])
-    
+
     if uploaded_file is not None:
         if uploaded_file.type == "application/pdf":
             resume_text = extract_text_from_pdf(uploaded_file)
         else:
             resume_text = uploaded_file.read().decode("utf-8")
-        
+
+        # Debugging: Check the columns of the DataFrame
+        st.write("DataFrame Columns:", df.columns.tolist())
+
         # Combine the resume text with the job descriptions for TF-IDF vectorization
         job_descriptions = df['Job Description'].fillna('').tolist()  # Ensure no NaN values
         corpus = [resume_text] + job_descriptions
-        
+
         # Vectorize the text using TF-IDF
         try:
             vectorizer = TfidfVectorizer(stop_words='english')
@@ -40,13 +43,13 @@ def page1():
         except ValueError as e:
             st.error(f"Error in fit_transform: {e}")
             return
-        
+
         # Compute cosine similarity between the resume and all job descriptions
         cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
-        
+
         # Get the top matching job descriptions
         top_matches = cosine_similarities.argsort()[-5:][::-1]
-        
+
         if cosine_similarities[top_matches[0]] > 0:  # Check if there are any matches
             for idx in top_matches:
                 job = df.iloc[idx]
@@ -63,10 +66,10 @@ def page1():
 def page2():
     st.title("Job Details Search")
     job_title = st.text_input("Enter Job Title")
-    
+
     if job_title:
         matching_job = df[df['Job Title'].str.contains(job_title, case=False, na=False)]
-        
+
         if not matching_job.empty:
             job = matching_job.iloc[0]
             st.write(f"**Experience:** {job['Experience']}")
@@ -78,7 +81,7 @@ def page2():
             st.write(f"**Job Title:** {job['Job Title']}")
             st.write(f"**Role:** {job['Role']}")
             st.write(f"**Job Description:** {job['Job Description']}")
-            st.write(f"**Skills:** {job['skills']}")   
+            st.write(f"**Skills:** {job['skills']}")
             st.write(f"**Responsibilities:** {job['Responsibilities']}")
             st.write(f"**Company:** {job['Company']}")
         else:
