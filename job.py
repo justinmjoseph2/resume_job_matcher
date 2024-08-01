@@ -32,8 +32,8 @@ def page1():
         # Debugging: Check the columns of the DataFrame
         st.write("DataFrame Columns:", df.columns.tolist())
 
-        # Combine the resume text with the job descriptions for TF-IDF vectorization
-        job_descriptions = df['Job Description'].fillna('').tolist()  # Ensure no NaN values
+        # Assuming the correct column name is 'cat__Job Description'
+        job_descriptions = df['cat__Job Description'].fillna('').tolist()  # Ensure no NaN values
         corpus = [resume_text] + job_descriptions
 
         # Vectorize the text using TF-IDF
@@ -53,11 +53,11 @@ def page1():
         if cosine_similarities[top_matches[0]] > 0:  # Check if there are any matches
             for idx in top_matches:
                 job = df.iloc[idx]
-                st.write(f"**Job Title:** {job['Job Title']}")
-                st.write(f"**Company:** {job['Company']}")
-                st.write(f"**Qualifications:** {job['Qualifications']}")
-                st.write(f"**Preference:** {job['Preference']}")
-                st.write(f"**Job Description:** {job['Job Description']}")
+                st.write(f"**Job Title:** {job['cat__Job Title']}")
+                st.write(f"**Company:** {job['cat__Company']}")
+                st.write(f"**Qualifications:** {job['cat__Qualifications']}")
+                st.write(f"**Preference:** {job['cat__Preference']}")
+                st.write(f"**Job Description:** {job['cat__Job Description']}")
                 st.write("---")
         else:
             st.write("No matching jobs found.")
@@ -68,22 +68,22 @@ def page2():
     job_title = st.text_input("Enter Job Title")
 
     if job_title:
-        matching_job = df[df['Job Title'].str.contains(job_title, case=False, na=False)]
+        matching_job = df[df['cat__Job Title'].str.contains(job_title, case=False, na=False)]
 
         if not matching_job.empty:
             job = matching_job.iloc[0]
-            st.write(f"**Experience:** {job['Experience']}")
-            st.write(f"**Qualifications:** {job['Qualifications']}")
-            st.write(f"**Salary Range:** {job['Salary Range']}")
-            st.write(f"**Work Type:** {job['Work Type']}")
-            st.write(f"**Job Posting Date:** {job['Job Posting Date']}")
-            st.write(f"**Preference:** {job['Preference']}")
-            st.write(f"**Job Title:** {job['Job Title']}")
-            st.write(f"**Role:** {job['Role']}")
-            st.write(f"**Job Description:** {job['Job Description']}")
-            st.write(f"**Skills:** {job['skills']}")
-            st.write(f"**Responsibilities:** {job['Responsibilities']}")
-            st.write(f"**Company:** {job['Company']}")
+            st.write(f"**Experience:** {job['cat__Experience']}")
+            st.write(f"**Qualifications:** {job['cat__Qualifications']}")
+            st.write(f"**Salary Range:** {job['cat__Salary Range']}")
+            st.write(f"**Work Type:** {job['cat__Work Type']}")
+            st.write(f"**Job Posting Date:** {job['cat__Job Posting Date']}")
+            st.write(f"**Preference:** {job['cat__Preference']}")
+            st.write(f"**Job Title:** {job['cat__Job Title']}")
+            st.write(f"**Role:** {job['cat__Role']}")
+            st.write(f"**Job Description:** {job['cat__Job Description']}")
+            st.write(f"**Skills:** {job['cat__Skills']}")
+            st.write(f"**Responsibilities:** {job['cat__Responsibilities']}")
+            st.write(f"**Company:** {job['cat__Company']}")
         else:
             st.write("No matching job found.")
 
