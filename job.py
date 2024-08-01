@@ -76,7 +76,7 @@ def page2():
             st.write(f"**Job Title:** {job['Job Title']}")
             st.write(f"**Role:** {job['Role']}")
             st.write(f"**Job Description:** {job['Job Description']}")
-            st.write(f"**Skills:** {job['Skills']}")   
+            st.write(f"**Skills:** {job['skills']}")   
             st.write(f"**Responsibilities:** {job['Responsibilities']}")
             st.write(f"**Company:** {job['Company']}")
         else:
