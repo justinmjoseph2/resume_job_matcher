@@ -4,7 +4,7 @@ import fitz  # PyMuPDF
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 # Load the dataset
-data_path = "./Book1.csv"
+data_path = "./Book2.csv"
 df = pd.read_csv(data_path)
 
 # Function to process text and remove stopwords
