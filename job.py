@@ -1,17 +1,12 @@
 import streamlit as st
 import pandas as pd
-import fitz  # PyMuPDF
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+import fitz
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Load the dataset
 data_path = "./Book2.csv"
 df = pd.read_csv(data_path)
-
-# Function to process text and remove stopwords
-def process_text(text):
-    words = text.lower().split()
-    words = [word for word in words if word not in ENGLISH_STOP_WORDS]
-    return words
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
@@ -32,30 +27,52 @@ def page1():
         else:
             resume_text = uploaded_file.read().decode("utf-8")
         
-        resume_words = set(process_text(resume_text))
+        # Combine the resume text with the job descriptions for TF-IDF vectorization
+        job_descriptions = df['Job Description'].tolist()
+        corpus = [resume_text] + job_descriptions
         
-        matching_jobs = []
+        # Vectorize the text using TF-IDF
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(corpus)
         
-        for idx, row in df.iterrows():
-            skills_education_text = f"{str(row.get('Skills', ''))} {str(row.get('Education', ''))}"
-            skills_education_words = set(process_text(skills_education_text))
-            if resume_words & skills_education_words:
-                matching_jobs.append(row)
+        # Compute cosine similarity between the resume and all job descriptions
+        cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
         
-        if matching_jobs:
-            for job in matching_jobs:
+        # Get the top matching job descriptions
+        top_matches = cosine_similarities.argsort()[-5:][::-1]
+        
+        if cosine_similarities[top_matches[0]] > 0:  # Check if there are any matches
+            matched_jobs = df.iloc[top_matches]
+            matched_jobs = matched_jobs.drop_duplicates(subset=['Job Title', 'Company'])
+            
+            total_salary = 0
+            count = 0
+            
+            for idx, job in matched_jobs.iterrows():
                 st.write(f"**Job Title:** {job['Job Title']}")
                 st.write(f"**Company:** {job['Company']}")
-                st.write(f"**Qualifications:** {job['Qualifications']}")
-                st.write(f"**Preference:** {job['Preference']}")
-                st.write(f"**Job Description:** {job['Job Description']}")
+                st.write(f"**Job Type:** {job['Work Type']}")
+                st.write(f"**Salary Range:** {job['Salary Range']}")
                 st.write("---")
+                
+                salary = job['Salary Range']
+                if pd.notna(salary):
+                    try:
+                        salary_values = [float(s.strip().replace('K', '')) for s in salary.replace('$', '').split('-')]
+                        total_salary += sum(salary_values) / len(salary_values)
+                        count += 1
+                    except ValueError:
+                        continue  # Skip the salary if it cannot be converted to float
+            
+            if count > 0:
+                avg_salary = total_salary / count
+                st.write(f"**Average Salary:** ${avg_salary:.2f}K")
         else:
             st.write("No matching jobs found.")
 
-# Page 2: Search Job by Title and Edit
+# Page 2: Search Job by Title
 def page2():
-    st.title("Job Details Search and Edit")
+    st.title("Job Details Search")
     job_title = st.text_input("Enter Job Title")
     
     if job_title:
@@ -63,51 +80,24 @@ def page2():
         
         if not matching_job.empty:
             job = matching_job.iloc[0]
-            
-            # Editable text boxes for each field
-            experience = st.text_area("Experience", job['Experience'])
-            qualifications = st.text_area("Qualifications", job['Qualifications'])
-            salary_range = st.text_area("Salary Range", job['Salary Range'])
-            work_type = st.text_area("Work Type", job['Work Type'])
-            job_posting_date = st.text_area("Job Posting Date", job['Job Posting Date'])
-            preference = st.text_area("Preference", job['Preference'])
-            job_title = st.text_area("Job Title", job['Job Title'])
-            role = st.text_area("Role", job['Role'])
-            job_description = st.text_area("Job Description", job['Job Description'])
-            skills = st.text_area("Skills", job['Skills'])
-            responsibilities = st.text_area("Responsibilities", job['Responsibilities'])
-            company = st.text_area("Company", job['Company'])
-            
-            if st.button("Save Changes"):
-                new_record = {
-                    'Experience': experience,
-                    'Qualifications': qualifications,
-                    'Salary Range': salary_range,
-                    'Work Type': work_type,
-                    'Job Posting Date': job_posting_date,
-                    'Preference': preference,
-                    'Job Title': job_title,
-                    'Role': role,
-                    'Job Description': job_description,
-                    'Skills': skills,
-                    'Responsibilities': responsibilities,
-                    'Company': company
-                }
-                
-                # Append the new record to the DataFrame
-                global df
-                df = df.append(new_record, ignore_index=True)
-                
-                # Save the DataFrame to the CSV file
-                df.to_csv(data_path, index=False)
-                
-                st.success("Changes saved and new record added!")
+            st.write(f"**Experience:** {job['Experience']}")
+            st.write(f"**Qualifications:** {job['Qualifications']}")
+            st.write(f"**Salary Range:** {job['Salary Range']}")
+            st.write(f"**Work Type:** {job['Work Type']}")
+            st.write(f"**Job Posting Date:** {job['Job Posting Date']}")
+            st.write(f"**Preference:** {job['Preference']}")
+            st.write(f"**Job Title:** {job['Job Title']}")
+            st.write(f"**Role:** {job['Role']}")
+            st.write(f"**Job Description:** {job['Job Description']}")
+            st.write(f"**Skills:** {job['skills']}")   
+            st.write(f"**Responsibilities:** {job['Responsibilities']}")
+            st.write(f"**Company:** {job['Company']}")
         else:
             st.write("No matching job found.")
 
 # Streamlit app with multiple pages
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to", ["Resume Job Matcher", "Job Details Search and Edit"])
+page = st.sidebar.radio("Go to", ["Resume Job Matcher", "Job Details Search"])
 
 if page == "Resume Job Matcher":
     page1()
