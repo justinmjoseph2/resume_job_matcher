@@ -4,7 +4,7 @@ import fitz
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load the dataset from CSV
+# Load the dataset
 data_path = "./Book2.csv"
 df = pd.read_csv(data_path)
 
@@ -28,16 +28,12 @@ def page1():
             resume_text = uploaded_file.read().decode("utf-8")
         
         # Combine the resume text with the job descriptions for TF-IDF vectorization
-        job_descriptions = df['Job Description'].fillna('').tolist()  # Ensure no NaN values
+        job_descriptions = df['Job Description'].tolist()
         corpus = [resume_text] + job_descriptions
         
         # Vectorize the text using TF-IDF
-        try:
-            vectorizer = TfidfVectorizer(stop_words='english')
-            tfidf_matrix = vectorizer.fit_transform(corpus)
-        except ValueError as e:
-            st.error(f"Error in fit_transform: {e}")
-            return
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(corpus)
         
         # Compute cosine similarity between the resume and all job descriptions
         cosine_similarities = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
@@ -46,14 +42,31 @@ def page1():
         top_matches = cosine_similarities.argsort()[-5:][::-1]
         
         if cosine_similarities[top_matches[0]] > 0:  # Check if there are any matches
-            for idx in top_matches:
-                job = df.iloc[idx]
+            matched_jobs = df.iloc[top_matches]
+            matched_jobs = matched_jobs.drop_duplicates(subset=['Job Title', 'Company'])
+            
+            total_salary = 0
+            count = 0
+            
+            for idx, job in matched_jobs.iterrows():
                 st.write(f"**Job Title:** {job['Job Title']}")
                 st.write(f"**Company:** {job['Company']}")
-                st.write(f"**Qualifications:** {job['Qualifications']}")
-                st.write(f"**Preference:** {job['Preference']}")
-                st.write(f"**Job Description:** {job['Job Description']}")
+                st.write(f"**Job Type:** {job['Work Type']}")
+                st.write(f"**Salary Range:** {job['Salary Range']}")
                 st.write("---")
+                
+                salary = job['Salary Range']
+                if pd.notna(salary):
+                    try:
+                        salary_values = [float(s.strip().replace('K', '')) for s in salary.replace('$', '').split('-')]
+                        total_salary += sum(salary_values) / len(salary_values)
+                        count += 1
+                    except ValueError:
+                        continue  # Skip the salary if it cannot be converted to float
+            
+            if count > 0:
+                avg_salary = total_salary / count
+                st.write(f"**Average Salary:** ${avg_salary:.2f}K")
         else:
             st.write("No matching jobs found.")
 
